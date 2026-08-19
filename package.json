@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "description": "MCP server that produces structured research source packs (facts, quotes, numbers, primary links, coverage map).",
   "license": "MIT",
+  "author": {
+    "name": "Alexei Udall",
+    "url": "https://github.com/SarutobiSasuke8"
+  },
   "homepage": "https://github.com/SarutobiSasuke8/source-pack-mcp#readme",
   "repository": {
     "type": "git",
@@ -30,9 +34,15 @@
   },
   "files": [
     "dist/src",
+    "scripts",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env --import tsx src/http.ts",
     "dev:stdio": "node --env-file-if-exists=.env --import tsx src/stdio.ts",
@@ -42,7 +52,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "npm run build && node --test \"dist/test/**/*.test.js\"",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "smoke:mcp": "npm run build && node scripts/smoke-stdio.mjs",
+    "pack:check": "npm pack --dry-run",
+    "prepack": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/express": "2.0.0",

@@ -1,3 +1,5 @@
+import { UpstreamNetworkError, UpstreamTimeoutError } from "./errors.js";
+
 import type { FetchRecord } from "./types.js";
 
 export interface FetcherOptions {
@@ -59,6 +61,11 @@ export class Fetcher {
         };
         if (contentType) record.contentType = contentType;
         return record;
+      } catch (error) {
+        if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
+          throw new UpstreamTimeoutError(url, this.options.timeoutMs, error);
+        }
+        throw new UpstreamNetworkError(url, error);
       } finally {
         clearTimeout(timer);
       }

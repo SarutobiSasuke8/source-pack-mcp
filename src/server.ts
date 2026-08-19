@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { z } from "zod";
 
+import { PackNotFoundError, toErrorEnvelope } from "./errors.js";
+
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import type { PackService } from "./service.js";
 
@@ -11,9 +13,13 @@ function jsonResult(value: Record<string, unknown>): CallToolResult {
   };
 }
 
-function errorResult(error: unknown): CallToolResult {
-  const message = error instanceof Error ? error.message : "Unknown error";
-  return { isError: true, content: [{ type: "text", text: message }] };
+export function errorResult(error: unknown): CallToolResult {
+  const envelope = toErrorEnvelope(error);
+  return {
+    isError: true,
+    content: [{ type: "text", text: envelope.error.message }],
+    structuredContent: envelope,
+  };
 }
 
 async function runTool(
@@ -27,7 +33,21 @@ async function runTool(
 }
 
 const queryInput = z.string().trim().min(1).max(500);
-const urlInput = z.string().trim().url().max(2_048);
+const urlInput = z
+  .string()
+  .trim()
+  .url()
+  .max(2_048)
+  .refine(
+    (value) => {
+      try {
+        return ["http:", "https:"].includes(new URL(value).protocol);
+      } catch {
+        return false;
+      }
+    },
+    { message: "URL must use http or https." },
+  );
 const packIdInput = z.string().trim().uuid();
 
 export function createSourcePackMcpServer(service: PackService): McpServer {
@@ -55,7 +75,7 @@ export function createSourcePackMcpServer(service: PackService): McpServer {
     {
       title: "Add a source to a pack",
       description:
-        "Fetch and extract a specific URL and add it to an existing pack (by pack_id). Useful when the agent already has a source in mind. Rebuilds the coverage map and returns the updated pack.",
+        "Fetch and extract a specific HTTP(S) URL and add it to an existing pack (by pack_id). Useful when the agent already has a source in mind. Rebuilds the coverage map and returns the updated pack.",
       inputSchema: z.object({
         pack_id: packIdInput,
         url: urlInput,
@@ -78,7 +98,7 @@ export function createSourcePackMcpServer(service: PackService): McpServer {
     async ({ pack_id }) =>
       runTool(async () => {
         const pack = await service.getPack(pack_id);
-        if (!pack) throw new Error(`No pack found with pack_id '${pack_id}'.`);
+        if (!pack) throw new PackNotFoundError(pack_id);
         return { pack };
       }),
   );

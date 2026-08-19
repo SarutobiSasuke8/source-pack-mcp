@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { htmlToMarkdown } from "./content.js";
 import { buildCoverageMap } from "./coverage.js";
 import { discoverSources } from "./discovery.js";
+import { PackNotFoundError, RobotsDisallowedError, UpstreamHttpError } from "./errors.js";
 import { extract } from "./extract.js";
 import { isPathAllowed, parseRobots } from "./robots.js";
 
@@ -16,14 +17,10 @@ import type { RobotsRules } from "./robots.js";
 import type { PackStore } from "./store.js";
 import type { PackSearchHit, PackSummary, Source, SourcePack } from "./types.js";
 
-export type SearchDepth = "quick" | "deep";
+// Preserve the original public import path while keeping the shared taxonomy in errors.ts.
+export { RobotsDisallowedError } from "./errors.js";
 
-export class RobotsDisallowedError extends Error {
-  public constructor(url: string) {
-    super(`Fetching '${url}' is disallowed by the site's robots.txt.`);
-    this.name = "RobotsDisallowedError";
-  }
-}
+export type SearchDepth = "quick" | "deep";
 
 const DEPTH_LIMITS: Record<SearchDepth, ExtractionOptions> = {
   quick: { maxItems: 8, maxLinks: 10 },
@@ -104,7 +101,7 @@ export class PackService {
     const url = new URL(rawUrl).toString();
     await this.assertAllowed(url);
     const { body, status, fetchedAt } = await this.fetchWithCache(url);
-    if (status >= 400) throw new Error(`Fetch failed for '${url}' with HTTP ${status}.`);
+    if (status >= 400) throw new UpstreamHttpError(url, status);
 
     const { title, markdown } = htmlToMarkdown(body, url);
     const extracted = extract(markdown, DEPTH_LIMITS[depth]);
@@ -150,7 +147,7 @@ export class PackService {
 
   public async addSource(packId: string, url: string, depth: SearchDepth): Promise<SourcePack> {
     const pack = await this.store.get(packId);
-    if (!pack) throw new Error(`No pack found with pack_id '${packId}'.`);
+    if (!pack) throw new PackNotFoundError(packId);
 
     const source = await this.buildSource(url, depth);
     pack.sources = pack.sources.filter((existing) => existing.url !== source.url);
