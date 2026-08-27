@@ -1,6 +1,8 @@
 export const SOURCE_PACK_ERROR_CODES = [
   "PACK_NOT_FOUND",
   "ROBOTS_DISALLOWED",
+  "URL_BLOCKED",
+  "RESPONSE_TOO_LARGE",
   "UPSTREAM_HTTP_ERROR",
   "UPSTREAM_NETWORK_ERROR",
   "UPSTREAM_TIMEOUT",
@@ -65,6 +67,28 @@ export class RobotsDisallowedError extends SourcePackError {
       details: { url },
     });
     this.name = "RobotsDisallowedError";
+  }
+}
+
+export class BlockedUrlError extends SourcePackError {
+  public constructor(url: string, reason: string) {
+    super("URL_BLOCKED", `Fetching '${url}' is not allowed: ${reason}.`, {
+      category: "policy_denied",
+      retryable: false,
+      details: { url, reason },
+    });
+    this.name = "BlockedUrlError";
+  }
+}
+
+export class ResponseTooLargeError extends SourcePackError {
+  public constructor(url: string, maxBytes: number) {
+    super("RESPONSE_TOO_LARGE", `Response body for '${url}' exceeded the ${maxBytes}-byte limit.`, {
+      category: "policy_denied",
+      retryable: false,
+      details: { url, max_bytes: maxBytes },
+    });
+    this.name = "ResponseTooLargeError";
   }
 }
 
