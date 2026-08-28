@@ -14,6 +14,12 @@ const envSchema = z.object({
   MAX_SOURCES_PER_PACK: z.coerce.number().int().min(1).max(50).default(8),
   FETCH_TIMEOUT_MS: z.coerce.number().int().min(500).max(120_000).default(15_000),
   FETCH_MIN_INTERVAL_MS: z.coerce.number().int().min(0).max(60_000).default(1_000),
+  FETCH_MAX_BODY_BYTES: z.coerce
+    .number()
+    .int()
+    .min(1_024)
+    .max(104_857_600)
+    .default(5_242_880),
   SEARCH_API_URL: z.string().url().optional(),
   USER_AGENT: z
     .string()
@@ -29,6 +35,7 @@ export interface AppConfig {
   maxSourcesPerPack: number;
   fetchTimeoutMs: number;
   fetchMinIntervalMs: number;
+  fetchMaxBodyBytes: number;
   searchApiUrl?: string;
   userAgent: string;
   cacheDir: string;
@@ -44,6 +51,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     maxSourcesPerPack: parsed.MAX_SOURCES_PER_PACK,
     fetchTimeoutMs: parsed.FETCH_TIMEOUT_MS,
     fetchMinIntervalMs: parsed.FETCH_MIN_INTERVAL_MS,
+    fetchMaxBodyBytes: parsed.FETCH_MAX_BODY_BYTES,
     userAgent: parsed.USER_AGENT,
     cacheDir: path.resolve(parsed.CACHE_DIR),
     cacheTtlSeconds: parsed.CACHE_TTL_SECONDS,

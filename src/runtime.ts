@@ -16,6 +16,7 @@ export function createRuntime(config: AppConfig): {
     timeoutMs: config.fetchTimeoutMs,
     minIntervalMs: config.fetchMinIntervalMs,
     userAgent: config.userAgent,
+    maxBodyBytes: config.fetchMaxBodyBytes,
   });
   const store = new PackStore(config.packsDir);
   const service = new PackService(config, cache, fetcher, store);

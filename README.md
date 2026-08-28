@@ -134,6 +134,7 @@ Copy `.env.example` or supply environment variables directly.
 | `MAX_SOURCES_PER_PACK` | `8` | Server-side maximum sources per pack (1-50). |
 | `FETCH_TIMEOUT_MS` | `15000` | Timeout for each outbound request. |
 | `FETCH_MIN_INTERVAL_MS` | `1000` | Minimum delay between serialized outbound requests. |
+| `FETCH_MAX_BODY_BYTES` | `5242880` | Maximum response body size in bytes; larger responses fail with `RESPONSE_TOO_LARGE`. |
 | `SEARCH_API_URL` | unset | Optional JSON search endpoint; DuckDuckGo HTML discovery is the fallback. |
 | `USER_AGENT` | project user agent | User-Agent sent with outbound requests. |
 | `CACHE_DIR` | `.cache` | Local fetched-page cache directory. |
@@ -161,7 +162,7 @@ Tool failures keep a human-readable text message for compatibility and also retu
 }
 ```
 
-Current codes are `PACK_NOT_FOUND`, `ROBOTS_DISALLOWED`, `UPSTREAM_HTTP_ERROR`, `UPSTREAM_NETWORK_ERROR`, `UPSTREAM_TIMEOUT`, and `INTERNAL_ERROR`. Unknown internal failures are sanitized; upstream errors indicate whether retrying may help.
+Current codes are `PACK_NOT_FOUND`, `ROBOTS_DISALLOWED`, `URL_BLOCKED`, `RESPONSE_TOO_LARGE`, `UPSTREAM_HTTP_ERROR`, `UPSTREAM_NETWORK_ERROR`, `UPSTREAM_TIMEOUT`, and `INTERNAL_ERROR`. Unknown internal failures are sanitized; upstream errors indicate whether retrying may help.
 
 ## Development and release checks
 
@@ -174,7 +175,7 @@ npm run smoke:mcp
 npm run pack:check
 ```
 
-`npm run check` includes the live integration test and therefore requires outbound network access. CI runs the full check, the MCP handshake, the package dry-run, and a high-severity dependency audit. Version tags (`v*`) produce a tested `.tgz` workflow artifact; publishing remains an explicit maintainer decision.
+The live integration test is opt-in: it is skipped unless `RUN_LIVE_TESTS=1` is set, so `npm run check` and CI are hermetic by default. Outbound fetches are SSRF-guarded: only http/https URLs are allowed, hostnames resolving to loopback, private (RFC1918), link-local, or other reserved addresses are refused (`URL_BLOCKED`), and redirects are re-validated hop by hop. CI runs the full check, the MCP handshake, the package dry-run, and a high-severity dependency audit. Version tags (`v*`) produce a tested `.tgz` workflow artifact; publishing remains an explicit maintainer decision.
 
 ## License
 

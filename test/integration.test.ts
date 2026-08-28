@@ -16,11 +16,16 @@ import { sourcePackSchema } from "../src/schema.js";
  * Two known, different-domain sources are then added deterministically so the
  * full pipeline — fetch → robots → extract → coverage → store → search — is
  * always exercised end to end.
+ *
+ * Opt-in only: set RUN_LIVE_TESTS=1 to run. CI stays hermetic by default.
  */
 const WIKIPEDIA = "https://en.wikipedia.org/wiki/Python_(programming_language)";
 const PYTHON_ORG = "https://www.python.org/doc/essays/blurb/";
 
-void test("live integration: build, augment, get, search a real pack", { timeout: 120_000 }, async () => {
+const skipLive =
+  process.env.RUN_LIVE_TESTS === "1" ? false : "live-network test; set RUN_LIVE_TESTS=1 to run";
+
+void test("live integration: build, augment, get, search a real pack", { timeout: 120_000, skip: skipLive }, async () => {
   const cacheDir = await mkdtemp(path.join(os.tmpdir(), "spm-int-cache-"));
   const packsDir = await mkdtemp(path.join(os.tmpdir(), "spm-int-packs-"));
   try {
