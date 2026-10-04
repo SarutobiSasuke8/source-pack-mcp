@@ -145,6 +145,10 @@ Copy `.env.example` or supply environment variables directly.
 
 Relative data paths resolve from the server process's working directory. Use absolute paths in long-lived MCP client configurations.
 
+Pack storage validates records on read and write. Malformed JSON, invalid records and files whose name does not match their `pack_id` are skipped by listing and search; direct retrieval treats them as unavailable. Their files are left in place for inspection. Updates replace the saved file atomically, so readers see a complete old or new version.
+
+Concurrent `pack_add_source` calls merge into the latest saved pack through a per-pack write queue. Run only one server process per `PACKS_DIR`: the queue belongs to that process's shared `PackStore`, and does not coordinate separate HTTP/stdio processes or external writers.
+
 ## Error contract
 
 Tool failures keep a human-readable text message for compatibility and also return a stable `structuredContent` envelope:
