@@ -1,0 +1,125 @@
+# mcp-eval contract suite for source-pack-mcp.
+# Run with `npm run eval:contract` (builds first). Paths resolve relative to this file, and the
+# stdio server runs with this directory as its working directory.
+#
+# Offline by construction:
+# - PACKS_DIR points at committed synthetic packs in fixtures/packs, so the happy paths read
+#   local JSON only.
+# - pack_build is never called with valid input (it discovers and fetches public sources).
+#   It is covered by its input schema and an over-limit deny path that the input schema
+#   rejects before any network work.
+# - pack_add_source is only called with inputs that fail before a fetch: a bad URL, a
+#   non-http scheme, an unknown pack, or a loopback IP literal that the SSRF guard blocks
+#   without a DNS lookup.
+# - SEARCH_API_URL points at a closed loopback port as a backstop, so an accidental discovery
+#   call fails locally instead of reaching a public search page.
+# No secrets: every env value below is synthetic.
+version: 1
+name: source-pack-mcp
+timeout_ms: 20000
+target:
+  transport: stdio
+  command: ["node", "../dist/src/stdio.js"]
+  env:
+    PACKS_DIR: fixtures/packs
+    CACHE_DIR: .cache
+    SEARCH_API_URL: http://127.0.0.1:9/search
+    FETCH_TIMEOUT_MS: "2000"
+    FETCH_MIN_INTERVAL_MS: "0"
+    USER_AGENT: source-pack-mcp-eval/1.0 (synthetic)
+contracts:
+  # exact: true fails if a tool is added or removed without updating this contract.
+  - name: tools_listed
+    expect_tools: [pack_build, pack_add_source, pack_get, pack_list, pack_search]
+    exact: true
+
+  - name: input_schemas
+    input_schema:
+      pack_build: fixtures/pack_build.input.schema.json
+      pack_add_source: fixtures/pack_add_source.input.schema.json
+      pack_get: fixtures/pack_get.input.schema.json
+      pack_list: fixtures/pack_list.input.schema.json
+      pack_search: fixtures/pack_search.input.schema.json
+
+  # Golden happy paths over the committed synthetic packs.
+  - name: pack_get_golden
+    tool: pack_get
+    input: { pack_id: 0b5c6d1e-2f3a-4b4c-8d5e-6f7a8b9c0d1e }
+    assert:
+      result_schema: fixtures/pack_result.schema.json
+      golden: fixtures/pack_get.golden.json
+
+  - name: pack_list_golden
+    tool: pack_list
+    input: { limit: 10 }
+    assert:
+      golden: fixtures/pack_list.golden.json
+
+  - name: pack_search_golden
+    tool: pack_search
+    input: { query: "heat pump", limit: 5 }
+    assert:
+      golden: fixtures/pack_search.golden.json
+
+  # Deny and fail-closed paths. Input validation failures surface as isError: true results.
+  - name: deny_pack_build_over_limit
+    tool: pack_build
+    input: { query: "heat pumps", max_sources: 51 }
+    assert:
+      is_error: true
+      error_message: "max_sources"
+
+  - name: deny_add_source_invalid_url
+    tool: pack_add_source
+    input: { pack_id: 0b5c6d1e-2f3a-4b4c-8d5e-6f7a8b9c0d1e, url: "not a url" }
+    assert:
+      is_error: true
+      error_message: "url"
+
+  - name: deny_add_source_non_http_scheme
+    tool: pack_add_source
+    input: { pack_id: 0b5c6d1e-2f3a-4b4c-8d5e-6f7a8b9c0d1e, url: "ftp://example.org/file.txt" }
+    assert:
+      is_error: true
+      error_message: "URL must use http or https"
+
+  - name: deny_add_source_loopback_ssrf
+    tool: pack_add_source
+    input: { pack_id: 0b5c6d1e-2f3a-4b4c-8d5e-6f7a8b9c0d1e, url: "http://127.0.0.1/admin" }
+    assert:
+      is_error: true
+      error_message: "private or reserved address"
+
+  - name: deny_add_source_unknown_pack
+    tool: pack_add_source
+    input: { pack_id: 3f2e1d0c-9b8a-4f7e-8d6c-5b4a3f2e1d0c, url: "https://example.org/" }
+    assert:
+      is_error: true
+      error_message: "No pack found with pack_id '3f2e1d0c-9b8a-4f7e-8d6c-5b4a3f2e1d0c'"
+
+  - name: pack_get_unknown_is_not_found
+    tool: pack_get
+    input: { pack_id: 3f2e1d0c-9b8a-4f7e-8d6c-5b4a3f2e1d0c }
+    assert:
+      is_error: true
+      golden: fixtures/pack_get.not_found.golden.json
+
+  - name: deny_pack_get_malformed_id
+    tool: pack_get
+    input: { pack_id: "../../etc/passwd" }
+    assert:
+      is_error: true
+      error_message: "pack_id"
+
+  - name: deny_pack_search_over_limit
+    tool: pack_search
+    input: { query: "heat", limit: 101 }
+    assert:
+      is_error: true
+      error_message: "limit"
+
+  - name: unknown_tool_is_invalid_params
+    tool: pack_delete
+    input: {}
+    assert:
+      error_code: INVALID_PARAMS
