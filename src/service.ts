@@ -146,19 +146,20 @@ export class PackService {
   }
 
   public async addSource(packId: string, url: string, depth: SearchDepth): Promise<SourcePack> {
-    const pack = await this.store.get(packId);
-    if (!pack) throw new PackNotFoundError(packId);
+    if (!await this.store.get(packId)) throw new PackNotFoundError(packId);
 
     const source = await this.buildSource(url, depth);
-    pack.sources = pack.sources.filter((existing) => existing.url !== source.url);
-    pack.sources.push(source);
-
-    pack.coverage_map = buildCoverageMap(collectDomainFacts(pack.sources));
-    pack.limitations = buildLimitations(pack.sources, pack.coverage_map);
-    pack.limitations.push(
-      "This pack was augmented via pack_add_source; original discovery limitations may be incomplete.",
-    );
-    await this.store.save(pack);
+    // Fetch outside the write queue, then merge into the latest saved version.
+    const pack = await this.store.update(packId, (current) => {
+      current.sources = current.sources.filter((existing) => existing.url !== source.url);
+      current.sources.push(source);
+      current.coverage_map = buildCoverageMap(collectDomainFacts(current.sources));
+      current.limitations = buildLimitations(current.sources, current.coverage_map);
+      current.limitations.push(
+        "This pack was augmented via pack_add_source; original discovery limitations may be incomplete.",
+      );
+    });
+    if (!pack) throw new PackNotFoundError(packId);
     return pack;
   }
 

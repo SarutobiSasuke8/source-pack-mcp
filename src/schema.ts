@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 /**
- * Runtime schema for the source pack deliverable. Used to validate packs in
- * tests and available to consumers that want to assert on tool output.
+ * Runtime schema for the source pack deliverable. Validates persisted packs
+ * on reads and writes, and is available to consumers checking tool output.
  */
 
 export const confidenceSchema = z.enum(["high", "medium", "low"]);

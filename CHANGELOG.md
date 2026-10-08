@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## Unreleased
 
+### Fixed
+
+- Concurrent source additions now preserve each completed addition and rebuild coverage from the combined sources.
+- Pack writes validate their schema and use atomic replacement; malformed or misidentified saved files no longer break listing and search.
+- Windows replacement retries handle briefly open readers without removing the previous pack; CI now exercises Windows alongside Linux.
+- Refreshed the locked `brace-expansion`, `hono` and `qs` dependencies to clear the current dependency audit findings.
+
 ### Added
 
 - Stable, versioned MCP error envelopes with retry guidance and safe error details.
