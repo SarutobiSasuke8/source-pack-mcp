@@ -1,0 +1,57 @@
+{
+  "pack_id": "0b5c6d1e-2f3a-4b4c-8d5e-6f7a8b9c0d1e",
+  "query": "heat pump adoption in Ireland",
+  "created_at": "2026-10-01T09:00:00.000Z",
+  "sources": [
+    {
+      "url": "https://example.org/reports/heat-pumps-2026",
+      "title": "Heat pump adoption report 2026 (synthetic fixture)",
+      "domain": "example.org",
+      "retrieved_at": "2026-10-01T08:59:00.000Z",
+      "facts": [
+        { "fact": "Heat pump installations rose by 18 percent in 2025.", "confidence": "medium" },
+        { "fact": "Grant uptake was highest in the Dublin region.", "confidence": "low" }
+      ],
+      "quotes": [
+        { "text": "Retrofit demand is now limited by installer capacity.", "context": "Synthetic fixture quote from the report summary." }
+      ],
+      "numbers": [
+        { "value": "18", "unit": "percent", "context": "Year-on-year growth in heat pump installations." }
+      ],
+      "dates": [
+        { "date": "2025-12-31", "event": "End of the reporting period for heat pump installations." }
+      ],
+      "primary_links": ["https://example.org/data/heat-pumps.csv"]
+    },
+    {
+      "url": "https://example.net/news/retrofit-grants",
+      "title": "Retrofit grants explained (synthetic fixture)",
+      "domain": "example.net",
+      "retrieved_at": "2026-10-01T08:59:30.000Z",
+      "facts": [
+        { "fact": "Heat pump installations rose by 18 percent in 2025.", "confidence": "medium" }
+      ],
+      "quotes": [],
+      "numbers": [],
+      "dates": [],
+      "primary_links": []
+    }
+  ],
+  "coverage_map": [
+    {
+      "claim": "Heat pump installations rose by 18 percent in 2025.",
+      "mentioned_by": ["example.org", "example.net"],
+      "contested_by": [],
+      "status": "consistent"
+    },
+    {
+      "claim": "Grant uptake was highest in the Dublin region.",
+      "mentioned_by": ["example.org"],
+      "contested_by": [],
+      "status": "isolated"
+    }
+  ],
+  "limitations": [
+    "Synthetic fixture pack for the mcp-eval contract suite. No content was fetched."
+  ]
+}

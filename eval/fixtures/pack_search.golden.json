@@ -1,0 +1,18 @@
+{
+  "query": "heat pump",
+  "results": [
+    {
+      "created_at": "2026-10-01T09:00:00.000Z",
+      "pack_id": "0b5c6d1e-2f3a-4b4c-8d5e-6f7a8b9c0d1e",
+      "query": "heat pump adoption in Ireland",
+      "snippets": [
+        "heat pump adoption in Ireland",
+        "Heat pump adoption report 2026 (synthetic fixture)",
+        "Heat pump installations rose by 18 percent in 2025.",
+        "Year-on-year growth in heat pump installations.",
+        "End of the reporting period for heat pump installations."
+      ],
+      "source_count": 2
+    }
+  ]
+}
