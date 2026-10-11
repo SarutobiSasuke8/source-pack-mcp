@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { BlockedUrlError, ResponseTooLargeError } from "../src/errors.js";
+import { BlockedUrlError, ResponseTooLargeError, UpstreamTimeoutError } from "../src/errors.js";
 import { Fetcher, isBlockedAddress } from "../src/fetcher.js";
 
 import type { FetcherDeps, FetcherOptions } from "../src/fetcher.js";
@@ -196,6 +196,75 @@ void test("a declared content-length over the cap is rejected before reading the
     { maxBodyBytes: 1_024 },
   );
   await assert.rejects(fetcher.fetch("https://example.com/declared-big"), ResponseTooLargeError);
+});
+
+/** A body that sends one chunk and then never sends another or closes. */
+function stalledBody(): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode("<html><body>partial"));
+    },
+  });
+}
+
+void test("a body that stalls after the headers fails with UPSTREAM_TIMEOUT", async () => {
+  const fetcher = makeFetcher(
+    {
+      lookup: () => Promise.resolve([PUBLIC_V4]),
+      // Ignores the abort signal on purpose: the fetcher must not rely on the
+      // fetch implementation to cancel a stalled body.
+      fetchFn: () => Promise.resolve(new Response(stalledBody(), { status: 200 })),
+    },
+    { timeoutMs: 100 },
+  );
+  const started = Date.now();
+  await assert.rejects(fetcher.fetch("https://example.com/stalled"), (error: unknown) => {
+    assert.ok(error instanceof UpstreamTimeoutError);
+    assert.equal(error.code, "UPSTREAM_TIMEOUT");
+    assert.deepEqual(error.details, { url: "https://example.com/stalled", timeout_ms: 100 });
+    return true;
+  });
+  assert.ok(Date.now() - started < 2_000, "the stalled body should fail near the deadline");
+});
+
+void test("a slow body that trickles past the deadline fails with UPSTREAM_TIMEOUT", async () => {
+  let timer: NodeJS.Timeout | undefined;
+  const slowBody = new ReadableStream<Uint8Array>({
+    start(controller) {
+      timer = setInterval(() => controller.enqueue(new TextEncoder().encode(".")), 20);
+    },
+    cancel() {
+      clearInterval(timer);
+    },
+  });
+  const fetcher = makeFetcher(
+    {
+      lookup: () => Promise.resolve([PUBLIC_V4]),
+      fetchFn: () => Promise.resolve(new Response(slowBody, { status: 200 })),
+    },
+    { timeoutMs: 150, maxBodyBytes: 1_000_000 },
+  );
+  try {
+    await assert.rejects(fetcher.fetch("https://example.com/slow"), UpstreamTimeoutError);
+  } finally {
+    clearInterval(timer);
+  }
+});
+
+void test("the deadline is per hop and does not fire after a completed fetch", async () => {
+  const fetcher = makeFetcher(
+    {
+      lookup: () => Promise.resolve([PUBLIC_V4]),
+      fetchFn: (_input, init) => {
+        assert.ok(init?.signal instanceof AbortSignal);
+        return Promise.resolve(new Response("done", { status: 200 }));
+      },
+    },
+    { timeoutMs: 50 },
+  );
+  const record = await fetcher.fetch("https://example.com/fast");
+  assert.equal(record.body, "done");
+  await new Promise((resolve) => setTimeout(resolve, 80));
 });
 
 void test("bodies within the cap are returned intact", async () => {

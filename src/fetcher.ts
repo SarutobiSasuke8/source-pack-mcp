@@ -183,12 +183,10 @@ export class Fetcher {
     }
   }
 
-  private async fetchOnce(url: string): Promise<Response> {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.options.timeoutMs);
+  private async fetchOnce(url: string, signal: AbortSignal): Promise<Response> {
     try {
       return await this.fetchFn(url, {
-        signal: controller.signal,
+        signal,
         redirect: "manual",
         headers: {
           "user-agent": this.options.userAgent,
@@ -196,17 +194,19 @@ export class Fetcher {
         },
       });
     } catch (error) {
-      if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
+      if (signal.aborted || (error instanceof Error && error.name === "AbortError")) {
         throw new UpstreamTimeoutError(url, this.options.timeoutMs, error);
       }
       throw new UpstreamNetworkError(url, error);
-    } finally {
-      clearTimeout(timer);
     }
   }
 
-  /** Read the body with a hard byte cap; throws RESPONSE_TOO_LARGE when exceeded. */
-  private async readBody(response: Response, url: string): Promise<string> {
+  /**
+   * Read the body with a hard byte cap; throws RESPONSE_TOO_LARGE when exceeded.
+   * The same deadline that bounds the request also bounds the body, so a server
+   * that sends headers and then stalls the stream fails with UPSTREAM_TIMEOUT.
+   */
+  private async readBody(response: Response, url: string, signal: AbortSignal): Promise<string> {
     const max = this.options.maxBodyBytes;
     const declared = Number(response.headers.get("content-length") ?? Number.NaN);
     if (Number.isFinite(declared) && declared > max) {
@@ -217,9 +217,24 @@ export class Fetcher {
     const reader = response.body.getReader();
     const chunks: Uint8Array[] = [];
     let received = 0;
+    let onAbort: (() => void) | undefined;
+    const aborted = new Promise<never>((_resolve, reject) => {
+      onAbort = () => reject(new UpstreamTimeoutError(url, this.options.timeoutMs));
+      if (signal.aborted) onAbort();
+      else signal.addEventListener("abort", onAbort, { once: true });
+    });
+    aborted.catch(() => undefined);
     try {
       for (;;) {
-        const { done, value } = await reader.read();
+        let chunk: ReadableStreamReadResult<Uint8Array>;
+        try {
+          chunk = await Promise.race([reader.read(), aborted]);
+        } catch (error) {
+          if (error instanceof UpstreamTimeoutError) throw error;
+          if (signal.aborted) throw new UpstreamTimeoutError(url, this.options.timeoutMs, error);
+          throw new UpstreamNetworkError(url, error);
+        }
+        const { done, value } = chunk;
         if (done) break;
         received += value.byteLength;
         if (received > max) {
@@ -228,6 +243,7 @@ export class Fetcher {
         chunks.push(value);
       }
     } finally {
+      if (onAbort) signal.removeEventListener("abort", onAbort);
       reader.cancel().catch(() => undefined);
     }
     return Buffer.concat(chunks).toString("utf8");
@@ -238,29 +254,36 @@ export class Fetcher {
     let currentUrl = initialUrl;
     for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
       await this.assertUrlAllowed(currentUrl);
-      const response = await this.fetchOnce(currentUrl);
-      const location = response.headers.get("location");
-      if (REDIRECT_STATUSES.has(response.status) && location !== null) {
-        await response.body?.cancel().catch(() => undefined);
-        let nextUrl: string;
-        try {
-          nextUrl = new URL(location, currentUrl).toString();
-        } catch {
-          throw new BlockedUrlError(currentUrl, `redirect target '${location}' could not be parsed`);
+      // One deadline per hop covers both the response headers and the body.
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), this.options.timeoutMs);
+      try {
+        const response = await this.fetchOnce(currentUrl, controller.signal);
+        const location = response.headers.get("location");
+        if (REDIRECT_STATUSES.has(response.status) && location !== null) {
+          await response.body?.cancel().catch(() => undefined);
+          let nextUrl: string;
+          try {
+            nextUrl = new URL(location, currentUrl).toString();
+          } catch {
+            throw new BlockedUrlError(currentUrl, `redirect target '${location}' could not be parsed`);
+          }
+          currentUrl = nextUrl;
+          continue;
         }
-        currentUrl = nextUrl;
-        continue;
+        const body = await this.readBody(response, currentUrl, controller.signal);
+        const contentType = response.headers.get("content-type") ?? undefined;
+        const record: FetchRecord = {
+          url: initialUrl,
+          status: response.status,
+          body,
+          fetchedAt: new Date().toISOString(),
+        };
+        if (contentType) record.contentType = contentType;
+        return record;
+      } finally {
+        clearTimeout(timer);
       }
-      const body = await this.readBody(response, currentUrl);
-      const contentType = response.headers.get("content-type") ?? undefined;
-      const record: FetchRecord = {
-        url: initialUrl,
-        status: response.status,
-        body,
-        fetchedAt: new Date().toISOString(),
-      };
-      if (contentType) record.contentType = contentType;
-      return record;
     }
     throw new BlockedUrlError(initialUrl, `more than ${MAX_REDIRECTS} redirects`);
   }
