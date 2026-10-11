@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "limit": {
+      "default": 50,
+      "maximum": 200,
+      "minimum": 1,
+      "type": "integer"
+    }
+  },
+  "type": "object"
+}

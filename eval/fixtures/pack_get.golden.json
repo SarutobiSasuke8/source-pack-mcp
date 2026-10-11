@@ -1,0 +1,85 @@
+{
+  "pack": {
+    "coverage_map": [
+      {
+        "claim": "Heat pump installations rose by 18 percent in 2025.",
+        "contested_by": [],
+        "mentioned_by": [
+          "example.org",
+          "example.net"
+        ],
+        "status": "consistent"
+      },
+      {
+        "claim": "Grant uptake was highest in the Dublin region.",
+        "contested_by": [],
+        "mentioned_by": [
+          "example.org"
+        ],
+        "status": "isolated"
+      }
+    ],
+    "created_at": "2026-10-01T09:00:00.000Z",
+    "limitations": [
+      "Synthetic fixture pack for the mcp-eval contract suite. No content was fetched."
+    ],
+    "pack_id": "0b5c6d1e-2f3a-4b4c-8d5e-6f7a8b9c0d1e",
+    "query": "heat pump adoption in Ireland",
+    "sources": [
+      {
+        "dates": [
+          {
+            "date": "2025-12-31",
+            "event": "End of the reporting period for heat pump installations."
+          }
+        ],
+        "domain": "example.org",
+        "facts": [
+          {
+            "confidence": "medium",
+            "fact": "Heat pump installations rose by 18 percent in 2025."
+          },
+          {
+            "confidence": "low",
+            "fact": "Grant uptake was highest in the Dublin region."
+          }
+        ],
+        "numbers": [
+          {
+            "context": "Year-on-year growth in heat pump installations.",
+            "unit": "percent",
+            "value": "18"
+          }
+        ],
+        "primary_links": [
+          "https://example.org/data/heat-pumps.csv"
+        ],
+        "quotes": [
+          {
+            "context": "Synthetic fixture quote from the report summary.",
+            "text": "Retrofit demand is now limited by installer capacity."
+          }
+        ],
+        "retrieved_at": "2026-10-01T08:59:00.000Z",
+        "title": "Heat pump adoption report 2026 (synthetic fixture)",
+        "url": "https://example.org/reports/heat-pumps-2026"
+      },
+      {
+        "dates": [],
+        "domain": "example.net",
+        "facts": [
+          {
+            "confidence": "medium",
+            "fact": "Heat pump installations rose by 18 percent in 2025."
+          }
+        ],
+        "numbers": [],
+        "primary_links": [],
+        "quotes": [],
+        "retrieved_at": "2026-10-01T08:59:30.000Z",
+        "title": "Retrofit grants explained (synthetic fixture)",
+        "url": "https://example.net/news/retrofit-grants"
+      }
+    ]
+  }
+}

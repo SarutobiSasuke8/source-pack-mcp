@@ -1,0 +1,12 @@
+{
+  "error": {
+    "category": "not_found",
+    "code": "PACK_NOT_FOUND",
+    "details": {
+      "pack_id": "3f2e1d0c-9b8a-4f7e-8d6c-5b4a3f2e1d0c"
+    },
+    "message": "No pack found with pack_id '3f2e1d0c-9b8a-4f7e-8d6c-5b4a3f2e1d0c'.",
+    "retryable": false,
+    "schema_version": "1"
+  }
+}

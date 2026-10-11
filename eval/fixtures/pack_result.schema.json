@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "source-pack-mcp pack result",
+  "type": "object",
+  "required": ["pack"],
+  "additionalProperties": false,
+  "properties": {
+    "pack": {
+      "type": "object",
+      "required": ["pack_id", "query", "created_at", "sources", "coverage_map", "limitations"],
+      "additionalProperties": false,
+      "properties": {
+        "pack_id": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+        "query": { "type": "string" },
+        "created_at": { "type": "string" },
+        "sources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["url", "title", "domain", "retrieved_at", "facts", "quotes", "numbers", "dates", "primary_links"],
+            "additionalProperties": false,
+            "properties": {
+              "url": { "type": "string" },
+              "title": { "type": "string" },
+              "domain": { "type": "string" },
+              "retrieved_at": { "type": "string" },
+              "facts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["fact", "confidence"],
+                  "properties": {
+                    "fact": { "type": "string" },
+                    "confidence": { "enum": ["high", "medium", "low"] }
+                  }
+                }
+              },
+              "quotes": {
+                "type": "array",
+                "items": { "type": "object", "required": ["text", "context"] }
+              },
+              "numbers": {
+                "type": "array",
+                "items": { "type": "object", "required": ["value", "unit", "context"] }
+              },
+              "dates": {
+                "type": "array",
+                "items": { "type": "object", "required": ["date", "event"] }
+              },
+              "primary_links": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "coverage_map": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["claim", "mentioned_by", "contested_by", "status"],
+            "properties": {
+              "claim": { "type": "string" },
+              "mentioned_by": { "type": "array", "items": { "type": "string" } },
+              "contested_by": { "type": "array", "items": { "type": "string" } },
+              "status": { "enum": ["consistent", "contested", "isolated"] }
+            }
+          }
+        },
+        "limitations": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

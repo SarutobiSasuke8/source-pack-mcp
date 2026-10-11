@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ### Fixed
 
+- HTTP creates a fresh MCP server and transport for each request. SDK 2.3.1 and later refuse to reuse a stateless transport, which would make every request after `initialize` fail with HTTP 500. An HTTP regression test now covers it.
 - Concurrent source additions now preserve each completed addition and rebuild coverage from the combined sources.
 - Pack writes validate their schema and use atomic replacement; malformed or misidentified saved files no longer break listing and search.
 - Windows replacement retries handle briefly open readers without removing the previous pack; CI now exercises Windows alongside Linux.
