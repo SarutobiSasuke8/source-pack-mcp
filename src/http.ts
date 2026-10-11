@@ -7,17 +7,16 @@ import { loadConfig } from "./config.js";
 import { createRuntime } from "./runtime.js";
 import { createSourcePackMcpServer } from "./server.js";
 
+import type { McpServer } from "@modelcontextprotocol/server";
 import type { ErrorRequestHandler } from "express";
 
 const config = loadConfig();
 const { service } = createRuntime(config);
 
-const mcpServer = createSourcePackMcpServer(service);
-const transport = new NodeStreamableHTTPServerTransport({
-  sessionIdGenerator: undefined,
-  enableJsonResponse: true,
-});
-await mcpServer.connect(transport);
+// Stateless Streamable HTTP: the SDK does not reuse a stateless transport across
+// requests, so each request gets its own server and transport, closed when the
+// response closes. The pack service, cache and store are shared.
+const openServers = new Set<McpServer>();
 
 const app = createMcpExpressApp({ host: config.host, jsonLimit: "1mb" });
 app.disable("x-powered-by");
@@ -28,6 +27,17 @@ app.get("/healthz", (_request, response) => {
 });
 
 app.all("/mcp", async (request, response) => {
+  const mcpServer = createSourcePackMcpServer(service);
+  const transport = new NodeStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  });
+  openServers.add(mcpServer);
+  response.on("close", () => {
+    openServers.delete(mcpServer);
+    void mcpServer.close();
+  });
+  await mcpServer.connect(transport);
   await transport.handleRequest(request, response, request.body);
 });
 
@@ -51,7 +61,8 @@ httpServer.keepAliveTimeout = 5_000;
 
 async function shutdown(): Promise<void> {
   httpServer.close();
-  await mcpServer.close();
+  await Promise.allSettled([...openServers].map((server) => server.close()));
+  openServers.clear();
 }
 
 process.on("SIGINT", () => void shutdown());
