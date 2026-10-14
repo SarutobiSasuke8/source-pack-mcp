@@ -1,0 +1,13 @@
+{
+  "results": [
+    {
+      "url": "https://missing.example/gone"
+    },
+    {
+      "url": "http://127.0.0.1/secret"
+    },
+    {
+      "url": "https://down.example/page"
+    }
+  ]
+}

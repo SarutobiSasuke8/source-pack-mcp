@@ -1,0 +1,43 @@
+{
+  "results": [
+    {
+      "url": "https://alpha.example/article"
+    },
+    {
+      "url": "https://alpha.example/article"
+    },
+    {
+      "url": "https://duckduckgo.com/l/?uddg=https%3A%2F%2Falpha.example%2Farticle"
+    },
+    {
+      "url": "https://www.bing.com/search?q=heat"
+    },
+    {
+      "url": "https://www.google.com/aclk?sa=l"
+    },
+    {
+      "url": "ftp://files.example/report.pdf"
+    },
+    {
+      "url": "https://beta.example/article"
+    },
+    {
+      "url": "https://contested.example/article"
+    },
+    {
+      "url": "https://denied.example/private"
+    },
+    {
+      "url": "https://missing.example/gone"
+    },
+    {
+      "url": "http://127.0.0.1/secret"
+    },
+    {
+      "url": "https://gamma.example/extra"
+    },
+    {
+      "snippet": "https://ignored.example/not-a-result"
+    }
+  ]
+}
