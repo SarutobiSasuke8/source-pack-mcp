@@ -1,0 +1,54 @@
+{
+  "pack_id": "bbbbbbbb-2222-4222-8222-222222222222",
+  "query": "kilowatt storage review shared-topic",
+  "created_at": "2026-06-01T12:00:00.000Z",
+  "sources": [
+    {
+      "url": "https://example.com/storage",
+      "title": "Coastal kilowatt storage notes",
+      "domain": "example.com",
+      "retrieved_at": "2026-06-01T11:00:00.000Z",
+      "facts": [
+        {
+          "fact": "Stored kilowatt readings remained stable across the coastal archive and the same sentence continues with extra recorded detail so that search must shorten the snippet before it is returned to the caller of pack_search.",
+          "confidence": "medium"
+        }
+      ],
+      "quotes": [
+        {
+          "text": "Operators kept a kilowatt reserve overnight.",
+          "context": "Spoken during the evening handover."
+        }
+      ],
+      "numbers": [
+        {
+          "value": "4",
+          "unit": "hours",
+          "context": "The kilowatt buffer lasted four hours."
+        }
+      ],
+      "dates": [
+        {
+          "date": "2024-05-01",
+          "event": "A kilowatt audit started on that morning."
+        }
+      ],
+      "primary_links": [
+        "https://example.com/storage.csv"
+      ]
+    }
+  ],
+  "coverage_map": [
+    {
+      "claim": "Unmatched coverage claim about a kilowatt gap in the archive.",
+      "mentioned_by": [
+        "example.com"
+      ],
+      "contested_by": [],
+      "status": "isolated"
+    }
+  ],
+  "limitations": [
+    "Synthetic fixture pack for search limits."
+  ]
+}

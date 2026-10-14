@@ -168,6 +168,21 @@ Tool failures keep a human-readable text message for compatibility and also retu
 
 Current codes are `PACK_NOT_FOUND`, `ROBOTS_DISALLOWED`, `URL_BLOCKED`, `RESPONSE_TOO_LARGE`, `UPSTREAM_HTTP_ERROR`, `UPSTREAM_NETWORK_ERROR`, `UPSTREAM_TIMEOUT`, and `INTERNAL_ERROR`. Unknown internal failures are sanitized; upstream errors indicate whether retrying may help.
 
+## Testing
+
+Tool tests are hermetic. They load committed fixture directories under `test/fixtures/tools/` (HTML pages, search responses, and stored packs) and do not contact the public network.
+
+```bash
+npm test
+```
+
+`npm test` builds the project, then runs `node --test "dist/test/**/*.test.js"`. The suite covers every MCP tool:
+
+- `pack_build` and `pack_add_source`: packing fixture pages into sources, coverage, and limitations; filtering junk discovery URLs, duplicate URLs, disallowed robots entries, and non-content links; source-count and extraction limits; and upstream, policy, and input errors.
+- `pack_get`, `pack_list`, and `pack_search`: reading fixture packs, skipping malformed or misidentified files, honouring list and search limits, and returning not-found or validation errors.
+
+The live integration test stays skipped unless `RUN_LIVE_TESTS=1` is set. `npm run check` runs typecheck, lint, and this test suite. CI runs that check on pull requests.
+
 ## Development and release checks
 
 ```bash
