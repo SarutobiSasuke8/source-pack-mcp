@@ -88,6 +88,26 @@ Build the server:
 npm run build
 ```
 
+### npm client configuration after publication
+
+The package is pending publication. Use the source installation until it is available.
+
+```json
+{
+  "mcpServers": {
+    "source-pack-mcp": {
+      "command": "npx",
+      "args": [
+        "--yes",
+        "--package",
+        "@sarutobi-sasuke/source-pack-mcp@0.1.0",
+        "source-pack-stdio"
+      ]
+    }
+  }
+}
+```
+
 ### Stdio transport (recommended for local MCP clients)
 
 Register the compiled stdio entry point with an absolute path:
